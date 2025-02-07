@@ -1,4 +1,5 @@
-import Modal from "./Modal";
+import Widget from "./Widget";
 
-const modal = new Modal();
+const widget = new Widget();
 
+widget.init();

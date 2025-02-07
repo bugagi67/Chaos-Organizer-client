@@ -1,9 +1,9 @@
 export default class Modal {
-  constructor() {}
+  constructor() {
+    this.body = document.querySelector("body");
+  }
 
-	userNameModal() {
-		const body = document.querySelector("body");
-
+  userNameModal() {
     const modal = document.createElement("div");
     modal.className = "modal user-name_modal";
     modal.innerHTML = `
@@ -17,12 +17,25 @@ export default class Modal {
 		</div>
         `;
 
-    body.append(modal);
-	}
+    this.body.append(modal);
+  }
+
+  modalZoomImage(url) {
+    const modal = document.createElement("div");
+    modal.className = "modal-image";
+    modal.innerHTML = `
+      <i class="fa-solid fa-circle-xmark close_btn"></i>
+      <img src="${url}" alt="Увеличенное изображение" class="modal_image">
+    `;
+    this.body.append(modal);
+  }
+
+  closeModalZoom() {
+    const modal = document.querySelector(".modal-image");
+    modal.remove();
+  }
 
   createGeolocationModal() {
-    const body = document.querySelector("body");
-
     const modal = document.createElement("div");
     modal.className = "modal geolocation-modal";
     modal.id = "geolocation-modal";
@@ -40,7 +53,7 @@ export default class Modal {
 		</div>
         `;
 
-    body.append(modal);
+    this.body.append(modal);
   }
 
   showModal(selector) {
@@ -53,7 +66,7 @@ export default class Modal {
     modal.classList.remove("active");
   }
 
-	showError() {
+  showError() {
     const buttons = document.querySelector(".buttons");
     const okButton = document.querySelector("#ok-btn");
     const error = document.createElement("span");

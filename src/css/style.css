@@ -26,7 +26,7 @@ body {
 }
 
 .header {
-	background-color: #759eb1;
+	background-color: #518fab;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
@@ -38,9 +38,6 @@ body {
 	color: #ebebeb;
 }
 
-.find-aside {
-	padding: 0 25px;
-}
 
 .find-aside .fa-solid {
 	margin-right: 30px;
@@ -109,15 +106,14 @@ body {
 	text-align: left;
 }
 
-.message-container audio,
-.message-container video {
+.audio,
+.video,
+.image,
+.message-file {
 	width: 100%;
 	object-fit: contain;
-	margin: 25px 0 10px;
-}
-
-.audio-player {
-	width: 75%;
+	margin: 25px 0 0;
+	font-size: 20px;
 }
 
 /* Create message input */
@@ -138,6 +134,23 @@ body {
 	font-family: inherit;
 }
 
+.add-file-form {
+	position: relative;
+	width: 40px;
+	margin-bottom: 30px;
+}
+
+.overlapped {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+}
+
 /* Icons */
 .fa-solid {
 	padding: 10px;
@@ -147,12 +160,26 @@ body {
 	transition: color 0.3s;
 }
 
+.add-file {
+	margin: 5px 0;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
 .fa-microphone:hover,
 .fa-video:hover,
 .confirm-record:hover,
 .cancel-record:hover,
 .find:hover,
-.sidebar:hover {
+.sidebar:hover,
+.add-file:hover {
 	color: #000;
 }
 
@@ -241,4 +268,32 @@ body {
 .modal-content .buttons button.ok {
 	background: #007bff;
 	color: #fff;
+}
+
+.modal-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8); 
+	display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.modal-image img {
+  border-radius: 10px;
+}
+.close_btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background-color: red;
+  color: white;
+  border: none;
+  font-size: 20px;
+  border-radius: 5px;
+  padding: 5px 10px;
+  cursor: pointer;
 }
