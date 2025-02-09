@@ -1,10 +1,15 @@
 import Modal from "./Modal";
-import { formatTime, positionValidation } from "./utils";
+import UiManager from "./uiManager";
+import positionValidation, { formatTime } from "./utils";
+import addGeoMessage,  { getPosition } from "./geolocation";
 import moment from "moment";
+// import { getPosition } from "./geolocation";
 
 export default class Widget {
   constructor() {
     this.modal = new Modal();
+    this.uimanager = new UiManager();
+
     this.listMessages = document.querySelector(".list-message");
     this.inputPosition = document.querySelector("#coordinates");
     this.inputMesage = document.querySelector("#enter-text");
@@ -14,6 +19,8 @@ export default class Widget {
   }
 
   init() {
+    this.uimanager.createDropdown();
+
     document.addEventListener("keydown", async (event) => {
       if (event.key === "Enter") {
         if (event.ctrlKey) {
@@ -34,7 +41,9 @@ export default class Widget {
 
           if (text.trim()) {
             const htmlText = `<div class="data">${text}</div>`;
-            this.getPosition(htmlText);
+            // this.getPosition(htmlText);
+            this.addMessage(htmlText);
+            this.resetInput(this.inputMesage);
           }
         }
       }
@@ -42,6 +51,19 @@ export default class Widget {
 
     document.addEventListener("click", async (event) => {
       const target = event.target;
+
+      if (target.classList.contains("sidebar")) {
+        console.log(target)
+        this.uimanager.dropdownOpen();
+      }
+
+      if (
+        !target.closest(".dropdown-content") &&
+        !target.closest(".dropdown-item") && 
+        !target.closest(".dropdown")
+      ) {
+        this.uimanager.dropdownClose();
+      }
 
       if (target.classList.contains("cancel")) {
         this.resetInput(this.inputPosition);
@@ -88,7 +110,7 @@ export default class Widget {
 
           const videoPlayer = `<video class="audio-player video" controls src="${videoSrc}"></video>`;
 
-          this.getPosition(videoPlayer);
+          this.addMessage(videoPlayer);
         });
 
         recorder.start();
@@ -121,7 +143,7 @@ export default class Widget {
 
           const player = `<audio class="audio-player audio" controls src="${src}"></audio>`;
 
-          this.getPosition(player);
+          this.addMessage(player);
         });
 
         recorder.start();
@@ -148,6 +170,16 @@ export default class Widget {
       if (target.classList.contains("close_btn")) {
         this.modal.closeModalZoom();
       }
+
+      if (target.classList.contains("send-geolocation")) {
+        getPosition()
+          .then(position => {
+            addGeoMessage(position);
+            this.uimanager.dropdownClose();
+          })
+          .catch(error => console.error("Ошибка получения геолокации:", error));
+          
+      }
     });
 
     this.inputAddFile.addEventListener("change", (e) => {
@@ -160,6 +192,8 @@ export default class Widget {
       const url = URL.createObjectURL(file);
       this.addFileMessage(url, file);
     });
+
+
   }
 
   hideButtonsRecord() {
@@ -175,6 +209,7 @@ export default class Widget {
   }
 
   addMessage(data) {
+    const listMessages = document.querySelector(".list-message")
     const textMessage = document.createElement("div");
     textMessage.className = "message-container";
     textMessage.innerHTML = `
@@ -184,8 +219,8 @@ export default class Widget {
       </div>
 
     `;
-    this.listMessages.insertAdjacentElement("afterbegin", textMessage);
-    this.listMessages.scrollTop = 0;
+    listMessages.insertAdjacentElement("afterbegin", textMessage);
+    listMessages.scrollTop = 0;
   }
 
   addFileMessage(fileUrl, file) {
@@ -216,24 +251,6 @@ export default class Widget {
   }
 
   editUserName() {}
-
-  getPosition(data) {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (currentPosition) => {
-          const { latitude, longitude } = currentPosition.coords;
-          const position = `${latitude},-${longitude}`;
-          this.addMessage(data, position);
-          this.resetInput(this.inputMesage);
-        },
-        (error) => {
-          this.modal.showModal();
-          console.error(error);
-        },
-        { enableHighAccuracy: true },
-      );
-    }
-  }
 
   resetInput(input) {
     input.value = "";
