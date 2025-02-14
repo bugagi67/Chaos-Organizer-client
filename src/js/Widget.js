@@ -1,50 +1,43 @@
 import Modal from "./Modal";
 import UiManager from "./uiManager";
-import positionValidation, { formatTime } from "./utils";
-import addGeoMessage,  { getPosition } from "./geolocation";
+import { formatTime } from "./utils";
+import addGeoMessage, { getPosition } from "./geolocation";
 import moment from "moment";
-// import { getPosition } from "./geolocation";
 
 export default class Widget {
   constructor() {
     this.modal = new Modal();
     this.uimanager = new UiManager();
-
     this.listMessages = document.querySelector(".list-message");
     this.inputPosition = document.querySelector("#coordinates");
-    this.inputMesage = document.querySelector("#enter-text");
+    this.inputMessage = document.querySelector("#enter-text");
     this.buttonsRecord = document.querySelectorAll(".record");
     this.inputAddFile = document.querySelector(".overlapped");
+    this.baseUrl = `http://localhost:9010`;
     this.watch = this.timer();
+    this.initWebSocket();
   }
 
   init() {
     this.uimanager.createDropdown();
 
     document.addEventListener("keydown", async (event) => {
-      if (event.key === "Enter") {
-        if (event.ctrlKey) {
-          event.preventDefault();
-          const textArea = this.inputMesage;
-          const start = textArea.selectionStart;
-          const end = textArea.selectionEnd;
+      if (event.key === "Enter" && !event.ctrlKey) {
+        event.preventDefault();
 
-          textArea.value =
-            textArea.value.substring(0, start) +
-            "\n" +
-            textArea.value.substring(end);
+        const text = this.inputMessage.value.trim();
 
-          textArea.selectionStart = textArea.selectionEnd = start + 1;
-        } else {
-          event.preventDefault();
-          const text = this.inputMesage.value;
-
-          if (text.trim()) {
-            const htmlText = `<div class="data">${text}</div>`;
-            // this.getPosition(htmlText);
-            this.addMessage(htmlText);
-            this.resetInput(this.inputMesage);
+        if (text) {
+          if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(
+              JSON.stringify({
+                type: "send_message",
+                content: text,
+                contentType: "text",
+              }),
+            );
           }
+          this.resetInput(this.inputMessage);
         }
       }
     });
@@ -53,36 +46,41 @@ export default class Widget {
       const target = event.target;
 
       if (target.classList.contains("sidebar")) {
-        console.log(target)
+        console.log(target);
         this.uimanager.dropdownOpen();
       }
 
       if (
         !target.closest(".dropdown-content") &&
-        !target.closest(".dropdown-item") && 
+        !target.closest(".dropdown-item") &&
         !target.closest(".dropdown")
       ) {
         this.uimanager.dropdownClose();
       }
 
+      if (target.classList.contains("find")) {
+        this.uimanager.openDropdownFind();
+      }
+
+      if (
+        !target.closest(".dropdown-find") &&
+        !target.closest(".find") &&
+        !target.closest(".find-area")
+      ) {
+        this.uimanager.closeDropdownFind();
+      }
+
+      if (target.classList.contains("favorite")) {
+        if (target.classList.contains("favorite-active")) {
+          target.classList.remove("favorite-active");
+        } else {
+          target.classList.add("favorite-active");
+        }
+      }
+
       if (target.classList.contains("cancel")) {
         this.resetInput(this.inputPosition);
         this.closeModal();
-      }
-
-      if (target.classList.contains("ok")) {
-        const position = this.inputPosition.value.trim();
-        const text = this.inputMesage.value;
-
-        const validPosition = positionValidation(position);
-
-        if (validPosition) {
-          this.addMessage(text, validPosition);
-          this.resetInput(this.inputPosition);
-          this.resetInput(this.inputMesage);
-          this.modal.closeModal();
-        }
-        this.showError();
       }
 
       if (target.classList.contains("record-video")) {
@@ -103,18 +101,35 @@ export default class Widget {
           chunks.push(event.data);
         });
 
-        recorder.addEventListener("stop", () => {
-          const blob = new Blob(chunks);
+        recorder.addEventListener("stop", async () => {
+          const blob = new Blob(chunks, { type: "video/webm" });
+          const file = new File([blob], "recording.webm", {
+            type: "video/webm",
+          });
 
-          const videoSrc = URL.createObjectURL(blob);
+          const formData = new FormData();
+          formData.append("file", file);
 
-          const videoPlayer = `<video class="audio-player video" controls src="${videoSrc}"></video>`;
+          const response = await fetch("http://localhost:9010/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-          this.addMessage(videoPlayer);
+          if (response.ok) {
+            const { fileUrl, contentType, fileName } = await response.json();
+            this.ws.send(
+              JSON.stringify({
+                type: "send_file",
+                contentType: contentType,
+                content: fileUrl,
+                fileName: fileName,
+                timeStamp: moment().format("HH:mm DD.MM.YYYY"),
+              }),
+            );
+          }
         });
 
         recorder.start();
-
         confirmVideoRecord.addEventListener("click", () => {
           console.log("click");
           recorder.stop();
@@ -131,23 +146,38 @@ export default class Widget {
         });
         const recorder = new MediaRecorder(stream);
         const chunks = [];
-
         recorder.addEventListener("dataavailable", (event) => {
           chunks.push(event.data);
         });
 
-        recorder.addEventListener("stop", () => {
-          const blob = new Blob(chunks);
+        recorder.addEventListener("stop", async () => {
+          const blob = new Blob(chunks, { type: "audio/webm" });
+          const file = new File([blob], "recording.webm", {
+            type: "audio/webm",
+          });
 
-          const src = URL.createObjectURL(blob);
+          const formData = new FormData();
+          formData.append("file", file);
+          const response = await fetch("http://localhost:9010/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-          const player = `<audio class="audio-player audio" controls src="${src}"></audio>`;
-
-          this.addMessage(player);
+          if (response.ok) {
+            const { fileUrl, contentType } = await response.json();
+            this.ws.send(
+              JSON.stringify({
+                type: "send_file",
+                contentType: contentType,
+                content: fileUrl,
+                fileName: "recording.webm",
+                timeStamp: moment().format("HH:mm DD.MM.YYYY"),
+              }),
+            );
+          }
         });
 
         recorder.start();
-
         confirmAudioRecord.addEventListener("click", () => {
           recorder.stop();
           stream.getTracks().forEach((track) => track.stop());
@@ -173,27 +203,37 @@ export default class Widget {
 
       if (target.classList.contains("send-geolocation")) {
         getPosition()
-          .then(position => {
+          .then((position) => {
             addGeoMessage(position);
             this.uimanager.dropdownClose();
           })
-          .catch(error => console.error("Ошибка получения геолокации:", error));
-          
+          .catch((error) =>
+            console.error("Ошибка получения геолокации:", error),
+          );
       }
     });
 
-    this.inputAddFile.addEventListener("change", (e) => {
-      e.preventDefault();
+    this.inputAddFile.addEventListener("change", async () => {
+      try {
+        const file = this.inputAddFile.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const file = this.inputAddFile.files && this.inputAddFile.files[0];
+        const response = await fetch("http://localhost:9010/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (!file) return;
-
-      const url = URL.createObjectURL(file);
-      this.addFileMessage(url, file);
+        if (response.ok) {
+          const { fileUrl, contentType, fileName } = await response.json();
+          console.log("URL файла (до отправки в WS):", fileUrl);
+        }
+      } catch (err) {
+        console.error("Ошибка загрузки:", err);
+        alert("Не удалось загрузить файл");
+      }
     });
-
-
   }
 
   hideButtonsRecord() {
@@ -208,49 +248,70 @@ export default class Widget {
     this.buttonsRecord.forEach((element) => element.classList.remove("icon"));
   }
 
-  addMessage(data) {
-    const listMessages = document.querySelector(".list-message")
-    const textMessage = document.createElement("div");
-    textMessage.className = "message-container";
-    textMessage.innerHTML = `
-      <div class="text-and_date">
-        ${data}
-        <div class="date">${moment().format("HH:mm DD.MM.YYYY")}</div>
-      </div>
-
-    `;
-    listMessages.insertAdjacentElement("afterbegin", textMessage);
-    listMessages.scrollTop = 0;
-  }
-
-  addFileMessage(fileUrl, file) {
+  addMessage(
+    content,
+    timeStamp,
+    contentType = "text",
+    fileUrl,
+    fileType,
+    fileName,
+  ) {
+    const listMessages = document.querySelector(".list-message");
     const message = document.createElement("div");
     message.className = "message-container";
 
-    let filePreview = "";
+    let contentBlock = "";
 
-    if (file.type.startsWith("image/")) {
-      filePreview = `<img src="${fileUrl}" alt="Изображение" class="message-container image">`;
-    } else if (file.type.startsWith("video/")) {
-      filePreview = `<video controls class="message-container video"><source src="${fileUrl}" type="${file.type}">Ваш браузер не поддерживает видео.</video>`;
-    } else if (file.type.startsWith("audio/")) {
-      filePreview = `<audio controls class="message-container audio"><source src="${fileUrl}" type="${file.type}">Ваш браузер не поддерживает аудио.</audio>`;
+    if (contentType === "text") {
+      contentBlock = content;
     } else {
-      filePreview = `<a href="${fileUrl}" download class="message-file">📄 ${file.name}</a>`;
+      let filePreview = "";
+
+      if (fileType.startsWith("image/")) {
+        filePreview = `<img src="${fileUrl}" alt="${fileName}" class="message-image">`;
+      } else if (fileType.startsWith("video/")) {
+        filePreview = `
+          <video controls class="message-video">
+            <source src="${fileUrl}" type="${fileType}">
+            Ваш браузер не поддерживает видео
+          </video>
+        `;
+      } else if (fileType.startsWith("audio/")) {
+        filePreview = `
+          <audio controls class="message-audio">
+            <source src="${fileUrl}" type="${fileType}">
+            Ваш браузер не поддерживает аудио
+            </audio>
+         `;
+      } else {
+        filePreview = `
+          <a href="${fileUrl}" download="${fileName}" class="message-file">
+          📄 ${fileName}
+          </a>
+        `;
+      }
+      contentBlock = filePreview;
     }
 
     message.innerHTML = `
-    <div class="text-and_date">
-      ${filePreview}
-      <div class="date">${moment().format("HH:mm DD.MM.YYYY")}</div>
-    </div>
-  `;
+        <div class="text-and_date">
+          <div class="container-options">
+            <div class="date-and_favorite">
+              <div class="date">${timeStamp}</div>
+              <i class="fa-solid fa-star favorite"></i>
+            </div>
+            <div class="edit-message">
+              ${contentType === "text" ? '<i class="fa-solid fa-pen"></i>' : ""}
+              <i class="fa-solid fa-trash"></i>
+            </div>
+          </div>
+          ${contentBlock}
+        </div>
+      `;
 
-    this.listMessages.insertAdjacentElement("afterbegin", message);
-    this.listMessages.scrollTop = 0;
+    listMessages.insertAdjacentElement("afterbegin", message);
+    listMessages.scrollTop = 0;
   }
-
-  editUserName() {}
 
   resetInput(input) {
     input.value = "";
@@ -280,7 +341,6 @@ export default class Widget {
   timer() {
     let seconds = 0;
     let intervalId = null;
-
     return {
       start(callback) {
         if (intervalId) return;
@@ -295,5 +355,57 @@ export default class Widget {
         intervalId = null;
       },
     };
+  }
+
+  initWebSocket() {
+    this.ws = new WebSocket("ws://127.0.0.1:9010");
+    this.ws.addEventListener("open", () => {
+      console.log("Websocket подключен");
+    });
+
+    this.ws.addEventListener("error", (error) => {
+      console.error("WebSocket error:", error);
+      setTimeout(() => this.initWebSocket(), 3000);
+    });
+
+    this.ws.addEventListener("message", (event) => {
+      const message = JSON.parse(event.data);
+      console.log(message);
+      if (message.type === "message_history") {
+        message.messages.forEach((msg) => {
+          if (msg.contentType === "text") {
+            this.addMessage(msg.content, msg.timeStamp);
+          } else {
+            this.addMessage(
+              "",
+              msg.timeStamp,
+              msg.contentType,
+              msg.content,
+              msg.contentType,
+              msg.fileName,
+            );
+          }
+        });
+      }
+
+      if (message.type === "new_message") {
+        if (message.contentType === "text") {
+          this.addMessage(message.content, message.timeStamp);
+        } else {
+          this.addMessage(
+            "",
+            message.timeStamp,
+            message.contentType,
+            message.content,
+            message.contentType,
+            message.fileName,
+          );
+        }
+      }
+    });
+
+    this.ws.addEventListener("close", () => {
+      console.log("Websocket отключен");
+    });
   }
 }

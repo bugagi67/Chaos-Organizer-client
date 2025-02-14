@@ -81,7 +81,7 @@ body {
 .message-container {
 	margin-bottom: 15px;
 	border-radius: 8px;
-	padding: 10px;
+	padding: 0 10px 10px;
 	background: #e0e0e0;
 	display: flex;
 	flex-direction: column;
@@ -97,12 +97,17 @@ body {
 	margin-bottom: 15px;
 }
 
-.message-container .date {
+.container-options {
+	display: flex;
 	font-size: 12px;
 	color: #888;
-	position: absolute;
-	top: 10px;
-	right: 10px;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.date-and_favorite {
+	display: flex;
+	align-items: center;
 }
 
 .message-container .geolocation {
@@ -111,9 +116,9 @@ body {
 	text-align: left;
 }
 
-.audio,
-.video,
-.image,
+.message-audio,
+.message-video,
+.message-image,
 .message-file {
 	width: 100%;
 	object-fit: contain;
@@ -163,6 +168,28 @@ body {
 	color: #555;
 	cursor: pointer;
 	transition: color 0.3s;
+}
+
+.favorite {
+	font-size: 13px;
+	color: #a5a1a1;
+}
+
+.favorite:hover {
+	color: goldenrod
+}
+
+.favorite-active {
+	color: goldenrod;
+}
+
+.edit-message .fa-solid {
+	font-size: 13px;
+	color: #a5a1a1;
+}
+
+.edit-message .fa-solid:hover {
+	color: #000;
 }
 
 .add-file {
@@ -329,4 +356,24 @@ body {
 
 .dropdown-item:hover {
 	color: #666;
+}
+
+.dropdown-find {
+	position: relative;
+}
+
+.find-area {
+	display: none;
+	resize: none;
+	position: absolute;
+	top: 50px;
+	right: -50px;
+	background-color: #fff;
+	height: 40px;
+	width: 360px;
+	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+	z-index: 1;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	padding: 10px;
 }
