@@ -14,6 +14,8 @@ export default class Widget {
     this.buttonsRecord = document.querySelectorAll(".record");
     this.inputAddFile = document.querySelector(".overlapped");
     this.baseUrl = `http://localhost:9010`;
+    this.currentDeleteElement = null;
+    this.currentEditElement = null;
     this.watch = this.timer();
     this.initWebSocket();
   }
@@ -26,18 +28,39 @@ export default class Widget {
         event.preventDefault();
 
         const text = this.inputMessage.value.trim();
+        if (this.currentEditElement !== null) {
+          const id =
+            this.currentEditElement.closest(".message-container").dataset.id;
 
-        if (text) {
-          if (this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(
-              JSON.stringify({
-                type: "send_message",
-                content: text,
-                contentType: "text",
-              }),
-            );
+          const editMessage = {
+            id: id,
+            content: text,
+          };
+
+          if (editMessage) {
+            if (this.ws.readyState === WebSocket.OPEN) {
+              this.ws.send(
+                JSON.stringify({
+                  type: "edit_message",
+                  ...editMessage,
+                }),
+              );
+            }
           }
-          this.resetInput(this.inputMessage);
+        } else {
+          //////////////////////////////////////////////////////////////////////
+          if (text) {
+            if (this.ws.readyState === WebSocket.OPEN) {
+              this.ws.send(
+                JSON.stringify({
+                  type: "send_message",
+                  content: text,
+                  contentType: "text",
+                }),
+              );
+            }
+            this.resetInput(this.inputMessage);
+          }
         }
       }
     });
@@ -185,6 +208,39 @@ export default class Widget {
         });
       }
 
+      if (target.classList.contains("remove-item")) {
+        const itemId = target.closest(".message-container").dataset.id;
+        this.currentDeleteElement = target.closest(".message-container");
+        console.log(itemId);
+        if (itemId) {
+          if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(
+              JSON.stringify({
+                type: "remove_message",
+                content: itemId,
+                contentType: "item-id",
+              }),
+            );
+          }
+        }
+      }
+
+      if (target.classList.contains("edit-item")) {
+        const itemId = target.closest(".message-container").dataset.id;
+        const content = target
+          .closest(".text-and_date")
+          .querySelector(".content-message").textContent;
+        this.currentEditElement = target
+          .closest(".text-and_date")
+          .querySelector(".content-message");
+
+        console.log(itemId);
+        console.log(content);
+
+        this.inputMessage.focus();
+        this.inputMessage.value = content;
+      }
+
       if (target.classList.contains("cancel-record")) {
         this.cancelRecord();
       }
@@ -224,11 +280,6 @@ export default class Widget {
           method: "POST",
           body: formData,
         });
-
-        if (response.ok) {
-          const { fileUrl, contentType, fileName } = await response.json();
-          console.log("URL файла (до отправки в WS):", fileUrl);
-        }
       } catch (err) {
         console.error("Ошибка загрузки:", err);
         alert("Не удалось загрузить файл");
@@ -249,6 +300,7 @@ export default class Widget {
   }
 
   addMessage(
+    id,
     content,
     timeStamp,
     contentType = "text",
@@ -258,7 +310,8 @@ export default class Widget {
   ) {
     const listMessages = document.querySelector(".list-message");
     const message = document.createElement("div");
-    message.className = "message-container";
+    message.className = `message-container`;
+    message.dataset.id = id;
 
     let contentBlock = "";
 
@@ -301,11 +354,11 @@ export default class Widget {
               <i class="fa-solid fa-star favorite"></i>
             </div>
             <div class="edit-message">
-              ${contentType === "text" ? '<i class="fa-solid fa-pen"></i>' : ""}
-              <i class="fa-solid fa-trash"></i>
+              ${contentType === "text" ? '<i class="fa-solid fa-pen edit-item"></i>' : ""}
+              <i class="fa-solid fa-trash remove-item"></i>
             </div>
           </div>
-          ${contentBlock}
+          <p class="content-message">${contentBlock}</p>
         </div>
       `;
 
@@ -371,12 +424,14 @@ export default class Widget {
     this.ws.addEventListener("message", (event) => {
       const message = JSON.parse(event.data);
       console.log(message);
+
       if (message.type === "message_history") {
         message.messages.forEach((msg) => {
           if (msg.contentType === "text") {
-            this.addMessage(msg.content, msg.timeStamp);
+            this.addMessage(msg.id, msg.content, msg.timeStamp);
           } else {
             this.addMessage(
+              msg.id,
               "",
               msg.timeStamp,
               msg.contentType,
@@ -390,9 +445,10 @@ export default class Widget {
 
       if (message.type === "new_message") {
         if (message.contentType === "text") {
-          this.addMessage(message.content, message.timeStamp);
+          this.addMessage(message.id, message.content, message.timeStamp);
         } else {
           this.addMessage(
+            message.id,
             "",
             message.timeStamp,
             message.contentType,
@@ -401,6 +457,21 @@ export default class Widget {
             message.fileName,
           );
         }
+      }
+
+      if (message.type === "confirm_remove_message") {
+        if (this.currentDeleteElement !== null) {
+          this.currentDeleteElement.remove();
+        } else {
+          console.log("Элемент не найден");
+        }
+      }
+
+      if (message.type === "edited_message") {
+        this.currentEditElement.textContent = message.content;
+        console.log(message.edited);
+        this.currentEditElement = null;
+        this.resetInput(this.inputMessage);
       }
     });
 
