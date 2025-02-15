@@ -1,5 +1,5 @@
 import Modal from "./Modal";
-import UiManager from "./uiManager";
+import UiManager from "./UiManager";
 import { formatTime } from "./utils";
 import addGeoMessage, { getPosition } from "./geolocation";
 import moment from "moment";
@@ -437,9 +437,9 @@ export default class Widget {
         message.messages.forEach((msg) => {
           if (msg.contentType === "text") {
             this.addMessage(msg.id, msg.content, msg.timeStamp);
-          } else if(msg.contentType === "geolocation") {
+          } else if (msg.contentType === "geolocation") {
             addGeoMessage(msg.content, msg.timeStamp, msg.id);
-          }else {
+          } else {
             this.addMessage(
               msg.id,
               "",
@@ -470,12 +470,14 @@ export default class Widget {
       }
 
       if (message.type === "geo_message") {
-        const {id, content: position, timeStamp } = message;
+        const { id, content: position, timeStamp } = message;
         addGeoMessage(position, timeStamp, id);
       }
 
       if (message.type === "confirm_remove_message") {
-        const currentDeleteElement = document.querySelector(`[data-id="${message.id}"]`);
+        const currentDeleteElement = document.querySelector(
+          `[data-id="${message.id}"]`,
+        );
         if (currentDeleteElement) {
           currentDeleteElement.remove();
         } else {
@@ -484,7 +486,9 @@ export default class Widget {
       }
 
       if (message.type === "edited_message") {
-        const currentEditElement = document.querySelector(`[data-id="${message.id}"]`).querySelector(".content-message");
+        const currentEditElement = document
+          .querySelector(`[data-id="${message.id}"]`)
+          .querySelector(".content-message");
         if (currentEditElement) {
           currentEditElement.textContent = message.content;
         }

@@ -17,7 +17,7 @@ export async function getPosition() {
 }
 
 export default function addGeoMessage(position, timeStamp, id) {
-  console.log(position)
+  console.log(position);
   const listMessages = document.querySelector(".list-message");
   const message = document.createElement("div");
   message.className = "message-container";
