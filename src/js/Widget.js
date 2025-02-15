@@ -14,7 +14,6 @@ export default class Widget {
     this.buttonsRecord = document.querySelectorAll(".record");
     this.inputAddFile = document.querySelector(".overlapped");
     this.baseUrl = `http://localhost:9010`;
-    this.currentDeleteElement = null;
     this.currentEditElement = null;
     this.watch = this.timer();
     this.initWebSocket();
@@ -48,7 +47,6 @@ export default class Widget {
             }
           }
         } else {
-          //////////////////////////////////////////////////////////////////////
           if (text) {
             if (this.ws.readyState === WebSocket.OPEN) {
               this.ws.send(
@@ -210,7 +208,6 @@ export default class Widget {
 
       if (target.classList.contains("remove-item")) {
         const itemId = target.closest(".message-container").dataset.id;
-        this.currentDeleteElement = target.closest(".message-container");
         console.log(itemId);
         if (itemId) {
           if (this.ws.readyState === WebSocket.OPEN) {
@@ -260,7 +257,18 @@ export default class Widget {
       if (target.classList.contains("send-geolocation")) {
         getPosition()
           .then((position) => {
-            addGeoMessage(position);
+            console.log(position);
+            if (position) {
+              if (this.ws.readyState === WebSocket.OPEN) {
+                this.ws.send(
+                  JSON.stringify({
+                    type: "geolocation_message",
+                    content: position,
+                    contentType: "geolocation",
+                  }),
+                );
+              }
+            }
             this.uimanager.dropdownClose();
           })
           .catch((error) =>
@@ -429,7 +437,9 @@ export default class Widget {
         message.messages.forEach((msg) => {
           if (msg.contentType === "text") {
             this.addMessage(msg.id, msg.content, msg.timeStamp);
-          } else {
+          } else if(msg.contentType === "geolocation") {
+            addGeoMessage(msg.content, msg.timeStamp, msg.id);
+          }else {
             this.addMessage(
               msg.id,
               "",
@@ -459,18 +469,25 @@ export default class Widget {
         }
       }
 
+      if (message.type === "geo_message") {
+        const {id, content: position, timeStamp } = message;
+        addGeoMessage(position, timeStamp, id);
+      }
+
       if (message.type === "confirm_remove_message") {
-        if (this.currentDeleteElement !== null) {
-          this.currentDeleteElement.remove();
+        const currentDeleteElement = document.querySelector(`[data-id="${message.id}"]`);
+        if (currentDeleteElement) {
+          currentDeleteElement.remove();
         } else {
-          console.log("Элемент не найден");
+          console.log("Элемент не найден на данном клиенте");
         }
       }
 
       if (message.type === "edited_message") {
-        this.currentEditElement.textContent = message.content;
-        console.log(message.edited);
-        this.currentEditElement = null;
+        const currentEditElement = document.querySelector(`[data-id="${message.id}"]`).querySelector(".content-message");
+        if (currentEditElement) {
+          currentEditElement.textContent = message.content;
+        }
         this.resetInput(this.inputMessage);
       }
     });
