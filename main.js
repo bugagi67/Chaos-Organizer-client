@@ -29657,7 +29657,7 @@ var Widget = /*#__PURE__*/function () {
     key: "initWebSocket",
     value: function initWebSocket() {
       var _this2 = this;
-      this.ws = new WebSocket("ws:https://chaos-organizer-server-o44h.onrender.com");
+      this.ws = new WebSocket("wss://chaos-organizer-server-o44h.onrender.com");
       this.ws.addEventListener("open", function () {
         console.log("Websocket подключен");
       });
