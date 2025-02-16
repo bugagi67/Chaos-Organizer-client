@@ -420,7 +420,7 @@ export default class Widget {
   }
 
   initWebSocket() {
-    this.ws = new WebSocket("ws:https://chaos-organizer-server-o44h.onrender.com");
+    this.ws = new WebSocket("wss://chaos-organizer-server-o44h.onrender.com");
     this.ws.addEventListener("open", () => {
       console.log("Websocket подключен");
     });
