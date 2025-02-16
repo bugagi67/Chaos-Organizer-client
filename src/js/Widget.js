@@ -13,7 +13,8 @@ export default class Widget {
     this.inputMessage = document.querySelector("#enter-text");
     this.buttonsRecord = document.querySelectorAll(".record");
     this.inputAddFile = document.querySelector(".overlapped");
-    this.baseUrl = `http://localhost:9010`;
+    this.baseUrl = "https://chaos-organizer-server-o44h.onrender.com"
+    // this.baseUrl = `http://localhost:9010`;
     this.currentEditElement = null;
     this.watch = this.timer();
     this.initWebSocket();
@@ -131,7 +132,7 @@ export default class Widget {
           const formData = new FormData();
           formData.append("file", file);
 
-          const response = await fetch("http://localhost:9010/upload", {
+          const response = await fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
             method: "POST",
             body: formData,
           });
@@ -179,7 +180,7 @@ export default class Widget {
 
           const formData = new FormData();
           formData.append("file", file);
-          const response = await fetch("http://localhost:9010/upload", {
+          const response = await fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
             method: "POST",
             body: formData,
           });
@@ -284,7 +285,7 @@ export default class Widget {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("http://localhost:9010/upload", {
+        const response = await fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
           method: "POST",
           body: formData,
         });
