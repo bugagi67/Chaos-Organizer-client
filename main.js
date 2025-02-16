@@ -29226,7 +29226,8 @@ var Widget = /*#__PURE__*/function () {
     this.inputMessage = document.querySelector("#enter-text");
     this.buttonsRecord = document.querySelectorAll(".record");
     this.inputAddFile = document.querySelector(".overlapped");
-    this.baseUrl = "http://localhost:9010";
+    this.baseUrl = "https://chaos-organizer-server-o44h.onrender.com";
+    // this.baseUrl = `http://localhost:9010`;
     this.currentEditElement = null;
     this.watch = this.timer();
     this.initWebSocket();
@@ -29352,7 +29353,7 @@ var Widget = /*#__PURE__*/function () {
                         formData = new FormData();
                         formData.append("file", file);
                         _context2.next = 6;
-                        return fetch("http://localhost:9010/upload", {
+                        return fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
                           method: "POST",
                           body: formData
                         });
@@ -29423,7 +29424,7 @@ var Widget = /*#__PURE__*/function () {
                         formData = new FormData();
                         formData.append("file", file);
                         _context3.next = 6;
-                        return fetch("http://localhost:9010/upload", {
+                        return fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
                           method: "POST",
                           body: formData
                         });
@@ -29538,7 +29539,7 @@ var Widget = /*#__PURE__*/function () {
               formData = new FormData();
               formData.append("file", file);
               _context5.next = 8;
-              return fetch("http://localhost:9010/upload", {
+              return fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
                 method: "POST",
                 body: formData
               });
