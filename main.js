@@ -29130,25 +29130,7 @@ __webpack_require__(4599);
 /******/ 	
 /******/ 	/* webpack/runtime/publicPath */
 /******/ 	(() => {
-/******/ 		var scriptUrl;
-/******/ 		if (__webpack_require__.g.importScripts) scriptUrl = __webpack_require__.g.location + "";
-/******/ 		var document = __webpack_require__.g.document;
-/******/ 		if (!scriptUrl && document) {
-/******/ 			if (document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT')
-/******/ 				scriptUrl = document.currentScript.src;
-/******/ 			if (!scriptUrl) {
-/******/ 				var scripts = document.getElementsByTagName("script");
-/******/ 				if(scripts.length) {
-/******/ 					var i = scripts.length - 1;
-/******/ 					while (i > -1 && (!scriptUrl || !/^http(s?):/.test(scriptUrl))) scriptUrl = scripts[i--].src;
-/******/ 				}
-/******/ 			}
-/******/ 		}
-/******/ 		// When supporting browsers where an automatic publicPath is not supported you must specify an output.publicPath manually via configuration
-/******/ 		// or pass an empty string ("") and set the __webpack_public_path__ variable from your code to use your own logic.
-/******/ 		if (!scriptUrl) throw new Error("Automatic publicPath is not supported in this browser");
-/******/ 		scriptUrl = scriptUrl.replace(/#.*$/, "").replace(/\?.*$/, "").replace(/\/[^\/]+$/, "/");
-/******/ 		__webpack_require__.p = scriptUrl;
+/******/ 		__webpack_require__.p = "./";
 /******/ 	})();
 /******/ 	
 /******/ 	/* webpack/runtime/jsonp chunk loading */
@@ -29637,8 +29619,8 @@ var Widget = /*#__PURE__*/function () {
     this.inputMessage = document.querySelector("#enter-text");
     this.buttonsRecord = document.querySelectorAll(".record");
     this.inputAddFile = document.querySelector(".overlapped");
-    // this.baseUrl = "https://chaos-organizer-server-o44h.onrender.com"
-    this.baseUrl = "http://localhost:9010";
+    this.baseUrl = "https://chaos-organizer-server-o44h.onrender.com";
+    // this.baseUrl = `http://localhost:9010`;
     this.currentEditElement = null;
     this.loadMoreMessage = false;
     this.watch = this.timer();
@@ -29780,7 +29762,7 @@ var Widget = /*#__PURE__*/function () {
                         formData = new FormData();
                         formData.append("file", file);
                         _context2.next = 6;
-                        return fetch("http://localhost:9010", {
+                        return fetch(_this.baseUrl, {
                           /////"https://chaos-organizer-server-o44h.onrender.com/upload"
                           method: "POST",
                           body: formData
@@ -29852,7 +29834,7 @@ var Widget = /*#__PURE__*/function () {
                         formData = new FormData();
                         formData.append("file", file);
                         _context3.next = 6;
-                        return fetch("http://localhost:9010/upload", {
+                        return fetch("".concat(_this.baseUrl, "/upload"), {
                           ////"https://chaos-organizer-server-o44h.onrender.com/upload"
                           method: "POST",
                           body: formData
@@ -29968,7 +29950,7 @@ var Widget = /*#__PURE__*/function () {
               formData = new FormData();
               formData.append("file", file);
               _context5.next = 8;
-              return fetch("http://localhost:9010/upload", {
+              return fetch("".concat(_this.baseUrl, "/upload"), {
                 ///////"https://chaos-organizer-server-o44h.onrender.com/upload"
                 method: "POST",
                 body: formData
@@ -30100,7 +30082,7 @@ var Widget = /*#__PURE__*/function () {
     key: "initWebSocket",
     value: function initWebSocket() {
       var _this2 = this;
-      this.ws = new WebSocket("ws://localhost:9010");
+      this.ws = new WebSocket("ws://chaos-organizer-server-o44h.onrender.com"); ///////chaos-organizer-server-o44h.onrender.com //localhost:9010
       this.ws.addEventListener("open", function () {
         console.log("Websocket подключен");
       });
