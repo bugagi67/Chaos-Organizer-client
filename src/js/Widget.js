@@ -459,7 +459,7 @@ export default class Widget {
   }
 
   initWebSocket() {
-    this.ws = new WebSocket(`ws://chaos-organizer-server-o44h.onrender.com`); ///////chaos-organizer-server-o44h.onrender.com //localhost:9010
+    this.ws = new WebSocket(`wss://chaos-organizer-server-o44h.onrender.com`); ///////chaos-organizer-server-o44h.onrender.com //localhost:9010
     this.ws.addEventListener("open", () => {
       console.log("Websocket подключен");
     });
