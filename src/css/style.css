@@ -103,11 +103,22 @@ body {
 	margin-bottom: 15px;
 }
 
+code {
+	display: block;
+	overflow: auto; 
+}
+
 .container-options {
 	display: flex;
 	color: #888;
 	justify-content: space-between;
 	align-items: center;
+}
+
+.content-message {
+	display: block;
+	white-space: pre-wrap;
+	word-wrap: break-word;
 }
 
 .date-and_favorite {

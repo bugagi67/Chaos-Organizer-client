@@ -13,9 +13,10 @@ export default class Widget {
     this.inputMessage = document.querySelector("#enter-text");
     this.buttonsRecord = document.querySelectorAll(".record");
     this.inputAddFile = document.querySelector(".overlapped");
-    this.baseUrl = "https://chaos-organizer-server-o44h.onrender.com"
-    // this.baseUrl = `http://localhost:9010`;
+    // this.baseUrl = "https://chaos-organizer-server-o44h.onrender.com"
+    this.baseUrl = `http://localhost:9010`;
     this.currentEditElement = null;
+    this.loadMoreMessage = false;
     this.watch = this.timer();
     this.initWebSocket();
   }
@@ -24,14 +25,16 @@ export default class Widget {
     this.uimanager.createDropdown();
 
     document.addEventListener("keydown", async (event) => {
-      if (event.key === "Enter" && !event.ctrlKey) {
+      if (event.key === "Enter") {
         event.preventDefault();
 
         const text = this.inputMessage.value.trim();
-        if (this.currentEditElement !== null) {
-          const id =
-            this.currentEditElement.closest(".message-container").dataset.id;
 
+        if (event.ctrlKey) {
+          this.inputMessage.value += "\n";
+        } else if (this.currentEditElement !== null) {
+          const id =
+            this.currentEditElement?.closest(".message-container")?.dataset.id;
           const editMessage = {
             id: id,
             content: text,
@@ -59,6 +62,22 @@ export default class Widget {
               );
             }
             this.resetInput(this.inputMessage);
+          }
+        }
+      }
+    });
+
+    this.listMessages.addEventListener("scroll", () => {
+      if (this.listMessages.scrollTop === 0) {
+        const lastMessageId = this.listMessages.firstElementChild.dataset.id;
+        if (lastMessageId) {
+          if (this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(
+              JSON.stringify({
+                type: "load_more",
+                lastMessageId,
+              }),
+            );
           }
         }
       }
@@ -132,7 +151,8 @@ export default class Widget {
           const formData = new FormData();
           formData.append("file", file);
 
-          const response = await fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
+          const response = await fetch("http://localhost:9010", {
+            /////"https://chaos-organizer-server-o44h.onrender.com/upload"
             method: "POST",
             body: formData,
           });
@@ -180,7 +200,8 @@ export default class Widget {
 
           const formData = new FormData();
           formData.append("file", file);
-          const response = await fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
+          const response = await fetch("http://localhost:9010/upload", {
+            ////"https://chaos-organizer-server-o44h.onrender.com/upload"
             method: "POST",
             body: formData,
           });
@@ -285,7 +306,8 @@ export default class Widget {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("https://chaos-organizer-server-o44h.onrender.com/upload", {
+        const response = await fetch("http://localhost:9010/upload", {
+          ///////"https://chaos-organizer-server-o44h.onrender.com/upload"
           method: "POST",
           body: formData,
         });
@@ -325,20 +347,33 @@ export default class Widget {
     let contentBlock = "";
 
     if (contentType === "text") {
-      contentBlock = content;
+      const urlRegex =
+        /(\b((ftp|http|https):\/\/|www\.)([\p{L}0-9-]+\.?)+\.{1}[\p{L}0-9-]{2,8}(\/\S*)?)/giu;
+      if (urlRegex.test(content)) {
+        contentBlock = content.replace(
+          urlRegex,
+          '<a href="$1" target="_blank">$1</a>',
+        );
+      } else {
+        if (content.startsWith("`") && content.endsWith("`")) {
+          contentBlock = `<pre><code>${content.slice(3, -3)}</code></pre>`;
+        } else {
+          contentBlock = content;
+        }
+      }
     } else {
       let filePreview = "";
 
-      if (fileType.startsWith("image/")) {
+      if (fileType && fileType.startsWith("image/")) {
         filePreview = `<img src="${fileUrl}" alt="${fileName}" class="message-image">`;
-      } else if (fileType.startsWith("video/")) {
+      } else if (fileType && fileType.startsWith("video/")) {
         filePreview = `
           <video controls class="message-video">
             <source src="${fileUrl}" type="${fileType}">
             Ваш браузер не поддерживает видео
           </video>
         `;
-      } else if (fileType.startsWith("audio/")) {
+      } else if (fileType && fileType.startsWith("audio/")) {
         filePreview = `
           <audio controls class="message-audio">
             <source src="${fileUrl}" type="${fileType}">
@@ -348,7 +383,7 @@ export default class Widget {
       } else {
         filePreview = `
           <a href="${fileUrl}" download="${fileName}" class="message-file">
-          📄 ${fileName}
+           ${fileName}
           </a>
         `;
       }
@@ -371,8 +406,12 @@ export default class Widget {
         </div>
       `;
 
-    listMessages.insertAdjacentElement("afterbegin", message);
-    listMessages.scrollTop = 0;
+    if (this.loadMoreMessage) {
+      listMessages.insertAdjacentElement("afterbegin", message);
+    } else {
+      listMessages.insertAdjacentElement("beforeend", message);
+      listMessages.scrollTop = listMessages.scrollHeight;
+    }
   }
 
   resetInput(input) {
@@ -420,7 +459,7 @@ export default class Widget {
   }
 
   initWebSocket() {
-    this.ws = new WebSocket("wss://chaos-organizer-server-o44h.onrender.com");
+    this.ws = new WebSocket("ws://localhost:9010");
     this.ws.addEventListener("open", () => {
       console.log("Websocket подключен");
     });
@@ -452,6 +491,32 @@ export default class Widget {
             );
           }
         });
+      }
+
+      if (message.type === "more_messages") {
+        this.loadMoreMessage = true;
+        message.messages.forEach((msg) => {
+          if (msg.contentType === "text") {
+            this.addMessage(msg.id, msg.content, msg.timeStamp);
+          } else if (msg.contentType === "geolocation") {
+            addGeoMessage(msg.content, msg.timeStamp, msg.id);
+          } else {
+            this.addMessage(
+              msg.id,
+              "",
+              msg.timeStamp,
+              msg.contentType,
+              msg.content,
+              msg.contentType,
+              msg.fileName,
+            );
+          }
+        });
+      }
+
+      if (message.type === "no_more_messages") {
+        this.loadMoreMessage = false;
+        console.log("Сообщений больше нет, допиши вывод плашки в список");
       }
 
       if (message.type === "new_message") {

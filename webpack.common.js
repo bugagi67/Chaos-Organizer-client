@@ -1,11 +1,11 @@
 const path = require("path");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
+// const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   output: {
     path: path.resolve(__dirname, "dist"),
-    publicPath: "./",
+    // publicPath: "./",
   },
   devServer: {
     port: 8080,
@@ -46,10 +46,10 @@ module.exports = {
       filename: "index.html",
       inject: "body",
     }),
-    new CopyWebpackPlugin({
-      patterns: [
-        { from: "src/images", to: "images" }, // Копируем папку с картинками
-      ],
-    }),
+    // new CopyWebpackPlugin({
+    //   patterns: [
+    //     { from: "src/images", to: "images" }, // Копируем папку с картинками
+    //   ],
+    // }),
   ],
 };
